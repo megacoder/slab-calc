@@ -1,0 +1,14 @@
+#!/bin/awk -f
+BEGIN	{
+}
+/^#/	{ next }
+NF >= 6	{
+	slab = $1
+	qty  = $3
+	size = $4
+	objs = $5
+	page = $6
+	printf "%-31s\t%9d\n", slab "(" size ")", (qty / objs) * page * 4096
+}
+END	{
+}
