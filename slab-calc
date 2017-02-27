@@ -1,0 +1,67 @@
+#!/bin/awk -f
+function comma( s,	d, i, n, v )	{
+	n = length( s )
+	v = ""
+	d = 0
+	for( i = n; i > 0; --i )	{
+		v = substr( s, i, 1 ) v
+		++d
+		if( (i > 1) && !(d % 3) )	{
+			v = "," v
+		}
+	}
+	return( v )
+}
+function calc_11(		v )	{
+	v = comma( sprintf( "%d", active_objs * pagesperslab * pagesize ) )
+	return( v )
+}
+function calc_21(		v )	{
+	if( objperslab )	{
+		v = sprintf( "%d", (num_objs / objperslab) * pagesperslab * pagesize )
+		v = comma( v )
+	} else	{
+		v = "N/A"
+	}
+	return( v )
+}
+BEGIN	{
+	FMT = "%-31s\t%15s\n"
+	pagesize = 4096
+}
+/^slabinfo/	{
+	version = $4
+	# print "version=", version
+}
+/^#/	{ next }
+/^zzz/	{
+	if( NR > 1 )	{
+		printf FMT, "-------------------------------", "------------"
+	}
+	printf FMT, "Slab Cache Item (Bytes each)", "Actual Bytes"
+	printf FMT, "-------------------------------", "------------"
+	next
+}
+{	sub( /:.*$/, "" )	}	# Drop foolishness after stats
+NF >= 6	{
+	if( version == "1.1" )	{
+		name = $1		# Name of the slab
+		active_objs = $2	# Number of currently active objects
+		num_objs = $3		# Number of available objects
+		objsize = $4		# Size of one object in bytes
+		act_pages = $5		# Number of pages with >=1 active obj
+		total_pages = $6	# Total number of allocated pages
+		pagesperslab = $7	# Number of pages per slab
+		printf FMT, name "(" objsize ")", calc_11()
+	} else if( version = "2.1" )	{
+		name = $1		# Name of the slab
+		active_objs  = $2	# Number of currently active objects
+		num_objs  = $3		# Number of available objects
+		objsize = $4		# Size of one object in bytes
+		objperslab = $5		# Qty pages with at least 1 active obj
+		pagesperslab = $6	# Total number of allocated pages
+		printf FMT, name "(" objsize ")", calc_21()
+	}
+}
+END	{
+}
